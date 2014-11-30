@@ -6,27 +6,24 @@
  * - exposes the model to the template and provides event handlers
  */
 angular.module('todomvc')
-	.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, $filter, store) {
+	.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, $filter, todoStore, flux) {
 		'use strict';
-		var todos = $scope.todos = store.todos;
+
+		var todos = $scope.todos = todoStore.getTodos();
 
 		$scope.newTodo = '';
 		$scope.editedTodo = null;
+		$scope.status = todoStore.getStatus();
+		$scope.statusFilter = todoStore.getStatusFilter();
 
-		$scope.$watch('todos', function () {
-			$scope.remainingCount = $filter('filter')(todos, { completed: false }).length;
-			$scope.completedCount = todos.length - $scope.remainingCount;
-			$scope.allChecked = !$scope.remainingCount;
-		}, true);
-
-		// Monitor the current route for changes and adjust the filter accordingly.
-		$scope.$on('$routeChangeSuccess', function () {
-			var status = $scope.status = $routeParams.status || '';
-
-			$scope.statusFilter = (status === 'active') ?
-				{ completed: false } : (status === 'completed') ?
-				{ completed: true } : null;
+		$scope.$listenTo(todoStore, '*', function () {
+			$scope.todos = todoStore.getTodos();
+			$scope.remainingCount = todoStore.getRemainingCount();
+			$scope.completedCount = todoStore.getCompletedCount();
+			$scope.allChecked = todoStore.isAllChecked();
 		});
+
+
 
 		$scope.addTodo = function () {
 			var newTodo = {
